@@ -1,0 +1,18 @@
+services:
+  member-cloud:
+    build: .
+    container_name: member-cloud-v2
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      PYTHONUNBUFFERED: "1"
+      DATABASE_PATH: /app/data/bot.db
+    ports:
+      - "${WEB_PORT:-8080}:${WEB_PORT:-8080}"
+    volumes:
+      - member_cloud_data:/app/data
+    init: true
+
+volumes:
+  member_cloud_data:
