@@ -140,12 +140,7 @@ def register_qr_login_handlers(app, *, config, db, is_admin, reply_admin_only,
             states.pop(user_id, None)
             tasks.pop(user_id, None)
 
-    @app.on_message(filters.private & filters.command("scanqr"))
-    async def scanner_qr_start(client, message):
-        user = message.from_user
-        if not user or not await is_admin(user.id):
-            await reply_admin_only(message)
-            return
+    async def begin_qr_login(user, message):
         scanner = get_scanner()
         if scanner is not None and scanner.is_connected:
             await message.reply_text("✅ 扫描账号已经登录，无需再次授权。")
@@ -190,6 +185,24 @@ def register_qr_login_handlers(app, *, config, db, is_admin, reply_admin_only,
         except Exception:
             log.exception("Could not start scanner QR login")
             await message.reply_text("❌ 无法生成登录二维码，请检查部署日志。")
+
+    @app.on_message(filters.private & filters.command("scanqr"))
+    async def scanner_qr_start(client, message):
+        user = message.from_user
+        if not user or not await is_admin(user.id):
+            await reply_admin_only(message)
+            return
+        await begin_qr_login(user, message)
+
+    @app.on_callback_query(filters.regex(r"^mc:scannerloginqr$"))
+    async def scanner_qr_menu_callback(client, query):
+        user = query.from_user
+        if not user or not await is_admin(user.id):
+            await query.answer("无管理员权限", show_alert=True)
+            raise StopPropagation
+        await query.answer()
+        await begin_qr_login(user, query.message)
+        raise StopPropagation
 
     @app.on_message(
         filters.private & filters.text & ~filters.regex(r"^/"),
