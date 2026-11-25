@@ -8823,25 +8823,49 @@ async def main():
             nonlocal scanner_started
             if scanner is None:
                 return
-            try:
-                await scanner.start()
-                scanner_started = True
-                scanner_me = await scanner.get_me()
-                if scanner_me.is_bot:
-                    raise RuntimeError("History scanner must be a normal Telegram user account")
-                log.info("History scanner ready: user %s", scanner_me.id)
-            except Exception:
-                log.exception(
-                    "History scanner is unavailable; bot will continue without history scanning"
-                )
-                if scanner_started:
-                    try:
-                        if scanner.is_connected:
-                            await scanner.stop()
-                    except Exception:
-                        log.exception("Could not stop failed history scanner session")
-                    scanner_started = False
-                scanner = None
+
+            # A transient Telegram/network failure must not discard the
+            # database-backed session object. Retry with bounded backoff so a
+            # cold start does not require the administrator to log in again.
+            retry_delays = (0, 3, 8, 15, 30)
+            last_error = None
+            for attempt, delay in enumerate(retry_delays, start=1):
+                if delay:
+                    await asyncio.sleep(delay)
+                try:
+                    if scanner.is_connected:
+                        await scanner.stop()
+                    await scanner.start()
+                    scanner_started = True
+                    scanner_me = await scanner.get_me()
+                    if scanner_me.is_bot:
+                        raise RuntimeError("History scanner must be a normal Telegram user account")
+                    log.info(
+                        "History scanner ready: user %s (attempt %s/%s)",
+                        scanner_me.id, attempt, len(retry_delays),
+                    )
+                    return
+                except Exception as exc:
+                    last_error = exc
+                    log.warning(
+                        "History scanner connection attempt %s/%s failed: %s",
+                        attempt, len(retry_delays), type(exc).__name__,
+                    )
+                    if scanner_started:
+                        try:
+                            if scanner.is_connected:
+                                await scanner.stop()
+                        except Exception:
+                            log.exception("Could not stop failed history scanner session")
+                        scanner_started = False
+
+            # Keep the session object and its PostgreSQL-backed credentials.
+            # The bot remains usable; /scanlogin can replace the session if
+            # Telegram has revoked it, and a process restart will retry it.
+            log.error(
+                "History scanner remains unavailable after %s attempts: %s",
+                len(retry_delays), type(last_error).__name__ if last_error else "unknown",
+            )
 
         # Channel-permission self-check and scanner login are not required
         # before the bot can answer messages. Run them in the background so
