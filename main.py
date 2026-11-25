@@ -1147,6 +1147,23 @@ async def is_admin(user_id: int) -> bool:
         return False
 
 
+def _set_scanner_from_qr(candidate):
+    global scanner
+    scanner = candidate
+
+
+from scanner_qr import register_qr_login_handlers
+register_qr_login_handlers(
+    app,
+    config=config,
+    db=db,
+    is_admin=is_admin,
+    reply_admin_only=reply_admin_only,
+    get_scanner=lambda: scanner,
+    set_scanner=_set_scanner_from_qr,
+)
+
+
 async def get_membership_tier(user_id: int, force_refresh: bool = False):
     if await is_superadmin(user_id):
         return "超级管理员"
