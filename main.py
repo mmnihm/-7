@@ -8429,7 +8429,7 @@ async def admin_callback_handler(client, query):
         await message.edit_text(
             "📖 管理命令速查\n\n管理员名单：打开 /admin → 管理员管理（仅超级管理员）\n\n"
             "/bindgroup — 绑定会员群\n/membercheck [用户ID] — 检查会员群和成员权限\n/bindmain [Chat ID] — 绑定主存储频道\n/bindbackup [Chat ID] — 绑定备用频道或群组\n/storage — 查看绑定状态\n"
-            "/ban 用户ID 原因 — 封禁用户\n/unban 用户ID — 解封用户\n/users — 用户列表\n/files — 文件列表\n/import — 批量转发导入旧文件\n/scanlogin — 在机器人内登录扫描账号\n/scancancel — 取消扫描账号登录\n/scanlogout — 退出/更换扫描账号\n/scancheck — 检查频道访问和历史读取权限\n/catalogreset — 预览清理旧资源索引\n/catalogresetconfirm — 确认清理资源索引\n/scan — 扫描频道历史\n/scanstatus — 查看扫描进度\n/scanstop — 暂停扫描\n/category 文件码 分类 — 修改分类\n/share 文件码1 文件码2 — 批量分享\n/wm 领取编号 — 按编号查领取人\n/welcome — 新人进群欢迎设置\n"
+            "/ban 用户ID 原因 — 封禁用户\n/unban 用户ID — 解封用户\n/users — 用户列表\n/files — 文件列表\n/import — 批量转发导入旧文件\n/scanlogin — 手机验证码登录扫描账号\n/scanqr — 使用个人 Telegram 扫描二维码登录\n/scancancel — 取消扫描账号登录\n/scanlogout — 退出/更换扫描账号\n/scancheck — 检查频道访问和历史读取权限\n/catalogreset — 预览清理旧资源索引\n/catalogresetconfirm — 确认清理资源索引\n/scan — 扫描频道历史\n/scanstatus — 查看扫描进度\n/scanstop — 暂停扫描\n/category 文件码 分类 — 修改分类\n/share 文件码1 文件码2 — 批量分享\n/wm 领取编号 — 按编号查领取人\n/welcome — 新人进群欢迎设置\n"
             "广播请打开 /admin → 群发广播，直接发送内容并确认。",
             reply_markup=back_keyboard(),
         )
