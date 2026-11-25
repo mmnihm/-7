@@ -8392,14 +8392,23 @@ async def admin_callback_handler(client, query):
         await message.edit_text(
             "🔐 扫描账号设置\n\n"
             "使用普通 Telegram 用户账号读取主、备份频道历史。建议使用专用账号，并先将它加入两个私有频道。\n\n"
-            "点击下方按钮后，机器人会引导你输入手机号、登录验证码及（如有）两步验证密码。敏感输入会尝试立即删除。\n"
-            "扫描进度和扫描账号登录会话均保存在 PostgreSQL 数据库中。重新部署后会自动恢复，无需重复登录。",
+            "点击「开始登录」后，可选择手机号验证码或二维码登录。登录会话保存在本地 SQLite 数据库中，重新部署后可自动恢复。\n"
+            "建议使用专用扫描账号，并先将它加入主、备用存储频道。",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("🔑 开始登录", callback_data="mc:scannerloginstart"),
                  InlineKeyboardButton("🏠 管理首页", callback_data="mc:home")],
             ]),
         )
     elif action == "scannerloginstart":
+        await message.edit_text(
+            "请选择扫描账号登录方式：",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("📱 手机号验证码登录", callback_data="mc:scannerloginphone")],
+                [InlineKeyboardButton("📷 二维码登录", callback_data="mc:scannerloginqr")],
+                [InlineKeyboardButton("⬅️ 返回", callback_data="mc:scannerlogin")],
+            ]),
+        )
+    elif action == "scannerloginphone":
         if scanner is not None and scanner.is_connected:
             await message.edit_text("✅ 扫描账号已经登录，可以直接发送 /scan 开始扫描。", reply_markup=back_keyboard())
         else:
@@ -8409,9 +8418,6 @@ async def admin_callback_handler(client, query):
                     await old_client.disconnect()
                 except Exception:
                     pass
-            # Use the same isolated in-memory login flow as /scanlogin.
-            # The verified session is exported and persisted to PostgreSQL
-            # only after an independent reconnect check succeeds.
             login_client = Client(
                 "member_cloud_scanner_login",
                 api_id=config.API_ID,
@@ -8426,7 +8432,8 @@ async def admin_callback_handler(client, query):
                     "🔐 请发送扫描账号的手机号（含国家区号，例如 +1）。\n\n"
                     "随后按提示输入 Telegram 登录验证码；如开启两步验证，还需要输入密码。\n"
                     "建议使用专用扫描账号。验证码/密码会短暂经过本机器人私聊，处理后会尝试立即删除。\n\n"
-                    "发送 /scancancel 可取消。"
+                    "发送 /scancancel 可取消。",
+                    reply_markup=back_keyboard(),
                 )
             except Exception:
                 log.exception("Could not start scanner login from admin panel")
