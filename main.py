@@ -1152,13 +1152,19 @@ def _set_scanner_from_qr(candidate):
     scanner = candidate
 
 
+async def _qr_reply_admin_only(message):
+    # Resolve the existing helper when the command is used; it is defined later
+    # in this module, after all top-level initialization has completed.
+    await reply_admin_only(message)
+
+
 from scanner_qr import register_qr_login_handlers
 register_qr_login_handlers(
     app,
     config=config,
     db=db,
     is_admin=is_admin,
-    reply_admin_only=reply_admin_only,
+    reply_admin_only=_qr_reply_admin_only,
     get_scanner=lambda: scanner,
     set_scanner=_set_scanner_from_qr,
 )
