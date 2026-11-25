@@ -2689,7 +2689,8 @@ async def send_catalog_batch(
     delivery_settings = await get_member_delivery_settings()
     primary_channel_id, backup_channel_id = storage
     records = await db.get_files_by_keys(item["file_key"] for item in batch)
-    records_by_key = {row["file_key"]: row for row in records}
+    # sqlite3.Row supports key indexing but has no dict.get(); normalize once at the DB boundary.
+    records_by_key = {row["file_key"]: dict(row) for row in records}
     delivered_keys = (
         await db.get_user_history_keys(
             user_id, [item["file_key"] for item in batch]
