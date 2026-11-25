@@ -5333,9 +5333,30 @@ async def scanner_login_input_handler(client, message):
                 + "\n如 Telegram 提供备用发送方式，可在等待时间结束后发送 /scanresend。"
                 + "\n如果当前显示 APP 且没有其他已登录设备，请不要连续申请；APP 验证码不会发到短信。"
             )
-        except Exception:
+        except FloodWait as exc:
+            wait_seconds = max(1, int(getattr(exc, "value", 1) or 1))
+            state["step"] = "phone"
+            await message.reply_text(
+                f"⏳ Telegram 暂时限制了登录请求，请等待 {wait_seconds} 秒后再发送手机号。"
+                "不要连续重复申请验证码。"
+            )
+        except Exception as exc:
             log.exception("Could not request scanner login code")
-            await message.reply_text("❌ 验证码发送失败，请检查手机号和网络后发送 /scancancel，再重新 /scanlogin。")
+            error_name = type(exc).__name__
+            if error_name == "PhoneNumberInvalid":
+                hint = "手机号格式无效，请使用带国家区号的格式，例如 +886。"
+            elif error_name == "PhoneNumberBanned":
+                hint = "这个手机号被 Telegram 限制，机器人无法替它解除限制。"
+            elif error_name == "PhoneNumberFlood":
+                hint = "这个手机号申请验证码过于频繁，请稍后再试，不要连续申请。"
+            else:
+                hint = f"Telegram 返回错误类型：{error_name}。请检查号码和网络后再试。"
+            await message.reply_text(
+                "❌ Telegram 没有成功发出登录验证码。\n"
+                + hint
+                + "\n如果 Telegram 显示 APP，验证码只会发到该账号已登录设备的 777000 服务通知，"
+                "机器人不能强制把它改成短信。"
+            )
         return
 
     if state["step"] == "code":
