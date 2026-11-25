@@ -47,6 +47,8 @@ def register_qr_login_handlers(app, *, config, db, is_admin, reply_admin_only,
                 auth_key_bytes, int(me.id), False,
             )
             session_string = base64.urlsafe_b64encode(packed).decode("ascii").rstrip("=")
+            # Avoid keeping the same MTProto auth key active in both libraries.
+            await telethon_client.disconnect()
             candidate = __import__("pyrogram").Client(
                 "member_cloud_scanner",
                 api_id=config.API_ID,
